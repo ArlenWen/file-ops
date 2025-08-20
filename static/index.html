@@ -106,9 +106,18 @@
         .btn-danger {
             background: #dc3545;
         }
-        
+
         .btn-danger:hover {
             background: #c82333;
+        }
+
+        .btn-preview {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-preview:hover {
+            background: #138496;
         }
         
         .file-list {
@@ -541,6 +550,7 @@
                             </div>
                         </div>
                         <div class="file-actions">
+                            <button class="btn btn-preview" onclick="previewDocument('${file.id}', '${file.name}')">👁️ 预览</button>
                             <button class="btn" onclick="openDocument('${file.id}', '${file.name}')">编辑</button>
                             <button class="btn btn-secondary" onclick="downloadFile('${file.id}', '${file.name}')">下载</button>
                             <button class="btn btn-danger" onclick="deleteFile('${file.id}', '${file.name}')">删除</button>
@@ -587,7 +597,41 @@
             // 显示成功提示
             showAlert(`正在新窗口中打开 "${fileName}"`, 'success');
         }
-        
+
+        function previewDocument(fileId, fileName) {
+            // 构建预览页面URL
+            const previewUrl = `/preview?fileId=${encodeURIComponent(fileId)}&fileName=${encodeURIComponent(fileName)}`;
+
+            // 计算窗口大小（占屏幕的90%，但有最小值限制）
+            const screenWidth = window.screen.availWidth;
+            const screenHeight = window.screen.availHeight;
+            const windowWidth = Math.max(Math.min(screenWidth * 0.9, 1400), 800);
+            const windowHeight = Math.max(Math.min(screenHeight * 0.9, 900), 600);
+
+            // 计算窗口位置（居中）
+            const left = Math.max((screenWidth - windowWidth) / 2, 0);
+            const top = Math.max((screenHeight - windowHeight) / 2, 0);
+
+            // 在新窗口中打开预览
+            const previewWindow = window.open(
+                previewUrl,
+                'documentPreview',
+                `width=${windowWidth},height=${windowHeight},left=${left},top=${top},scrollbars=yes,resizable=yes,status=no,toolbar=no,menubar=no,location=no`
+            );
+
+            // 检查弹窗是否被阻止
+            if (!previewWindow) {
+                showAlert('无法打开预览窗口，请允许弹窗并重试', 'error');
+                return;
+            }
+
+            // 聚焦到新窗口
+            previewWindow.focus();
+
+            // 显示成功提示
+            showAlert(`正在新窗口中预览 "${fileName}"`, 'success');
+        }
+
 
         
         async function downloadFile(fileId, fileName) {

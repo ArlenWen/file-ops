@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>预览功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-preview {
+            background: #17a2b8;
+        }
+        .btn-preview:hover {
+            background: #138496;
+        }
+        .file-list {
+            margin-top: 20px;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin: 5px 0;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>预览功能测试</h1>
+        
+        <div class="file-list" id="fileList">
+            <div>正在加载文件列表...</div>
+        </div>
+        
+        <div class="log" id="log">
+            <div>日志输出:</div>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div>[${time}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function previewDocument(fileId, fileName) {
+            log(`开始预览文档: ${fileName} (ID: ${fileId})`);
+            
+            // 构建预览页面URL
+            const previewUrl = `/preview?fileId=${encodeURIComponent(fileId)}&fileName=${encodeURIComponent(fileName)}`;
+            log(`预览URL: ${previewUrl}`);
+
+            // 打开预览窗口
+            const previewWindow = window.open(
+                previewUrl,
+                'documentPreview',
+                'width=1200,height=800,scrollbars=yes,resizable=yes'
+            );
+
+            if (previewWindow) {
+                log('预览窗口已打开');
+                previewWindow.focus();
+            } else {
+                log('ERROR: 无法打开预览窗口，请检查浏览器弹窗设置');
+            }
+        }
+
+        function testPreviewConfig(fileId) {
+            log(`测试预览配置: ${fileId}`);
+            
+            fetch(`/preview-config/${fileId}`)
+                .then(response => {
+                    log(`预览配置响应状态: ${response.status}`);
+                    return response.json();
+                })
+                .then(config => {
+                    log('预览配置获取成功:');
+                    log(JSON.stringify(config, null, 2));
+                })
+                .catch(error => {
+                    log(`ERROR: 获取预览配置失败: ${error.message}`);
+                });
+        }
+
+        async function loadFileList() {
+            try {
+                log('开始加载文件列表...');
+                const response = await fetch('/files');
+                const files = await response.json();
+                log(`文件列表加载成功，共 ${files.length} 个文件`);
+                
+                const fileList = document.getElementById('fileList');
+                
+                if (files.length === 0) {
+                    fileList.innerHTML = '<div>没有找到任何文件</div>';
+                    return;
+                }
+                
+                fileList.innerHTML = '';
+                
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.innerHTML = `
+                        <div>
+                            <strong>${file.name}</strong><br>
+                            <small>大小: ${formatFileSize(file.size)} | 上传时间: ${new Date(file.upload_time).toLocaleString()}</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-preview" onclick="previewDocument('${file.id}', '${file.name}')">👁️ 预览</button>
+                            <button class="btn" onclick="testPreviewConfig('${file.id}')">🔧 测试配置</button>
+                        </div>
+                    `;
+                    fileList.appendChild(fileItem);
+                });
+            } catch (error) {
+                log(`ERROR: 加载文件列表失败: ${error.message}`);
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 页面加载时加载文件列表
+        window.onload = function() {
+            log('页面加载完成，开始初始化...');
+            loadFileList();
+        };
+    </script>
+</body>
+</html>

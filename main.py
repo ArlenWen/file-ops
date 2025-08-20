@@ -80,6 +80,13 @@ async def editor():
         content = await f.read()
     return HTMLResponse(content=content)
 
+@app.get("/preview", response_class=HTMLResponse)
+async def preview():
+    """Serve the preview page"""
+    async with aiofiles.open("static/preview.html", 'r', encoding='utf-8') as f:
+        content = await f.read()
+    return HTMLResponse(content=content)
+
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     """Upload a file"""
@@ -192,11 +199,15 @@ async def get_editor_config(file_id: str):
     elif file_extension in ['.pptx', '.ppt']:
         document_type = "slide"
 
+    # Generate unique key for editor to avoid caching issues
+    import time
+    unique_key = f"edit_{file_id}_{int(time.time())}"
+
     # OnlyOffice editor configuration
     editor_config = {
         "document": {
             "fileType": file_extension[1:],  # remove the dot
-            "key": file_id,
+            "key": unique_key,
             "title": metadata["original_name"],
             "url": f"{config.server_url}/download/{file_id}"
         },
@@ -226,6 +237,85 @@ async def get_editor_config(file_id: str):
         print(f"JWT token not generated - secret: {bool(config.onlyoffice_secret)}, jwt_enabled: {config.get('onlyoffice.jwt_enabled', True)}")
 
     return editor_config
+
+@app.get("/preview-config/{file_id}")
+async def get_preview_config(file_id: str):
+    """Get OnlyOffice preview configuration for a file (read-only mode)"""
+    metadata_path = UPLOAD_DIR / f"{file_id}.json"
+    if not metadata_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    async with aiofiles.open(metadata_path, 'r') as f:
+        content = await f.read()
+        metadata = json.loads(content)
+
+    # Determine document type based on file extension
+    file_extension = Path(metadata["original_name"]).suffix.lower()
+    document_type = "word"  # default
+    if file_extension in ['.xlsx', '.xls']:
+        document_type = "cell"
+    elif file_extension in ['.pptx', '.ppt']:
+        document_type = "slide"
+
+    # Generate unique key for preview to avoid caching issues
+    import time
+    unique_key = f"preview_{file_id}_{int(time.time())}"
+
+    # OnlyOffice preview configuration (read-only mode)
+    preview_config = {
+        "document": {
+            "fileType": file_extension[1:],  # remove the dot
+            "key": unique_key,  # Unique key for each preview session
+            "title": metadata["original_name"],
+            "url": f"{config.server_url}/download/{file_id}"
+        },
+        "documentType": document_type,
+        "editorConfig": {
+            "mode": "view",  # Set to view mode for preview
+            "lang": config.get('ui.language', 'zh-CN'),
+            "user": {
+                "id": config.get('editor.default_user_id', 'user1'),
+                "name": config.get('editor.default_user_name', 'User')
+            },
+            "customization": {
+                "autosave": False,
+                "comments": False,
+                "compactToolbar": True,
+                "help": False,
+                "hideRightMenu": True,
+                "hideRulers": True,
+                "integrationMode": "embed",
+                "toolbarNoTabs": True,
+                "zoom": 100,
+                "goback": False,
+                "chat": False,
+                "plugins": False,
+                "macros": False
+            },
+            "embedded": {
+                "saveUrl": "",
+                "embedUrl": "",
+                "shareUrl": "",
+                "toolbarDocked": "top"
+            }
+        },
+        "width": "100%",
+        "height": "600px"
+    }
+
+    # Generate JWT token if secret is configured and JWT is enabled
+    if config.onlyoffice_secret and config.get('onlyoffice.jwt_enabled', True):
+        # OnlyOffice expects the entire config as the payload
+        token = generate_jwt_token(preview_config)
+        preview_config["token"] = token
+
+        # Also add debug info to help troubleshoot
+        print(f"Generated JWT token for preview {file_id}")
+        print(f"Using secret: {config.onlyoffice_secret[:10]}...")
+    else:
+        print(f"JWT token not generated for preview - secret: {bool(config.onlyoffice_secret)}, jwt_enabled: {config.get('onlyoffice.jwt_enabled', True)}")
+
+    return preview_config
 
 @app.post("/callback/{file_id}")
 async def onlyoffice_callback(file_id: str, request_data: dict):

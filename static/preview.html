@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档预览 - OnlyOffice</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+            min-width: 320px;
+            min-height: 400px;
+        }
+        
+        .preview-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            position: relative;
+            min-height: 60px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .preview-title {
+            font-weight: 600;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .preview-title span:last-child {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-icon {
+            font-size: 1.2em;
+            flex-shrink: 0;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: #007bff;
+            border-color: #007bff;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            border-color: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            border-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+            border-color: #545b62;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85em;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .preview-container {
+            height: calc(100vh - 60px);
+            position: relative;
+            background: white;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #666;
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        .error-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px;
+            z-index: 999;
+        }
+
+        .error-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: #dc3545;
+        }
+
+        .error-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .error-message {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+            max-width: 500px;
+        }
+
+        #placeholder {
+            width: 100%;
+            height: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .preview-header {
+                padding: 10px 15px;
+                min-height: 50px;
+            }
+            
+            .preview-title {
+                font-size: 1em;
+            }
+            
+            .btn {
+                padding: 6px 12px;
+                font-size: 0.8em;
+            }
+            
+            .preview-container {
+                height: calc(100vh - 50px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-header">
+        <div class="preview-title">
+            <span class="file-icon" id="fileIcon">👁️</span>
+            <span id="fileName">加载中...</span>
+        </div>
+        <div class="preview-actions">
+            <div class="status-indicator" id="statusIndicator">
+                <div class="status-dot"></div>
+                <span>预览模式</span>
+            </div>
+            <button class="btn btn-secondary" onclick="downloadFile()">
+                📥 下载
+            </button>
+            <button class="btn" onclick="closePreview()">
+                ✕ 关闭
+            </button>
+        </div>
+    </div>
+    
+    <div class="preview-container">
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">正在加载预览...</div>
+        </div>
+        
+        <div class="error-container" id="errorContainer">
+            <div class="error-icon">⚠️</div>
+            <div class="error-title">加载失败</div>
+            <div class="error-message" id="errorMessage">无法加载文档预览，请检查网络连接或稍后重试。</div>
+            <button class="btn btn-primary" onclick="retryLoad()">🔄 重试</button>
+            <button class="btn btn-secondary" onclick="closePreview()">返回</button>
+        </div>
+        
+        <div id="placeholder"></div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentEditor = null;
+        let isDocumentLoaded = false;
+        let fileId = null;
+        let fileName = null;
+        let appConfig = null;
+
+        // 从URL参数获取文件信息
+        function getUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            fileId = urlParams.get('fileId');
+            fileName = urlParams.get('fileName');
+
+            if (!fileId || !fileName) {
+                showError('参数错误', '缺少必要的文件参数');
+                return false;
+            }
+            return true;
+        }
+
+        // 加载应用配置
+        async function loadAppConfig() {
+            try {
+                const response = await fetch('/config');
+                if (response.ok) {
+                    appConfig = await response.json();
+                } else {
+                    console.warn('无法加载应用配置，使用默认设置');
+                }
+            } catch (error) {
+                console.error('加载配置失败:', error);
+            }
+        }
+
+        // 显示错误信息
+        function showError(title, message) {
+            const errorContainer = document.getElementById('errorContainer');
+            const errorMessage = document.getElementById('errorMessage');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+
+            errorMessage.textContent = message;
+            loadingOverlay.style.display = 'none';
+            errorContainer.style.display = 'flex';
+        }
+
+        // 隐藏加载界面
+        function hideLoading() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            loadingOverlay.style.display = 'none';
+        }
+
+        // 获取文件图标
+        function getFileIcon(fileName) {
+            const extension = fileName.split('.').pop().toLowerCase();
+            const iconMap = {
+                'docx': '📄', 'doc': '📄',
+                'xlsx': '📊', 'xls': '📊',
+                'pptx': '📽️', 'ppt': '📽️',
+                'pdf': '📕',
+                'txt': '📝'
+            };
+            return iconMap[extension] || '📄';
+        }
+
+        // 更新页面标题和文件信息
+        function updatePageInfo() {
+            document.title = `预览: ${fileName}`;
+            document.getElementById('fileName').textContent = fileName;
+            document.getElementById('fileIcon').textContent = getFileIcon(fileName);
+        }
+
+        // 重试加载
+        function retryLoad() {
+            const errorContainer = document.getElementById('errorContainer');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+
+            errorContainer.style.display = 'none';
+            loadingOverlay.style.display = 'flex';
+
+            setTimeout(() => {
+                loadPreview();
+            }, 500);
+        }
+
+        // 加载预览
+        async function loadPreview() {
+            try {
+                // 加载OnlyOffice API
+                if (!window.DocsAPI) {
+                    const script = document.createElement('script');
+                    script.src = appConfig?.onlyoffice?.api_js_url || 'http://10.0.51.143:8080/web-apps/apps/api/documents/api.js';
+                    script.onload = () => loadPreviewConfig();
+                    script.onerror = () => showError('API加载失败', '无法加载OnlyOffice API，请检查服务器配置');
+                    document.head.appendChild(script);
+                } else {
+                    loadPreviewConfig();
+                }
+            } catch (error) {
+                console.error('Failed to load preview:', error);
+                showError('加载失败', `无法加载文档预览: ${error.message}`);
+            }
+        }
+
+        // 加载预览配置
+        async function loadPreviewConfig() {
+            try {
+                console.log('Loading preview config for file:', fileId);
+                const response = await fetch(`/preview-config/${fileId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const config = await response.json();
+                console.log('Preview config loaded:', config);
+
+                // 设置预览为自适应大小
+                config.width = "100%";
+                config.height = "100%";
+
+                // 添加事件回调
+                config.events = {
+                    'onDocumentReady': function() {
+                        console.log('Document ready');
+                        isDocumentLoaded = true;
+                        hideLoading();
+                    },
+                    'onError': function(event) {
+                        console.error('OnlyOffice error:', event);
+                        showError('文档加载错误', `OnlyOffice错误: ${event.data || '未知错误'}`);
+                    },
+                    'onInfo': function(event) {
+                        console.log('OnlyOffice info:', event);
+                    }
+                };
+
+                console.log('Initializing OnlyOffice editor with config:', config);
+
+                // 初始化预览
+                currentEditor = new DocsAPI.DocEditor("placeholder", config);
+
+                // 设置超时检查
+                setTimeout(() => {
+                    if (!isDocumentLoaded) {
+                        showError('加载超时', '文档加载时间过长，请检查网络连接或稍后重试。');
+                    }
+                }, 30000); // 30秒超时
+
+            } catch (error) {
+                console.error('Failed to load preview config:', error);
+                showError('配置加载失败', `无法加载预览配置: ${error.message}`);
+            }
+        }
+
+        // 下载文件
+        function downloadFile() {
+            if (fileId) {
+                window.open(`/download/${fileId}`, '_blank');
+            }
+        }
+
+        // 关闭预览
+        function closePreview() {
+            if (currentEditor) {
+                currentEditor.destroyEditor();
+            }
+
+            // 返回主页面
+            if (window.opener) {
+                window.close();
+            } else {
+                window.location.href = '/';
+            }
+        }
+
+        // 页面加载完成后初始化
+        window.onload = async function() {
+            if (!getUrlParams()) {
+                return;
+            }
+
+            await loadAppConfig();
+            updatePageInfo();
+            loadPreview();
+        };
+
+        // 页面卸载时清理资源
+        window.onbeforeunload = function() {
+            if (currentEditor) {
+                currentEditor.destroyEditor();
+            }
+        };
+    </script>
+</body>
+</html>

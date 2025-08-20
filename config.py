@@ -126,14 +126,14 @@ class Config:
         """获取默认配置"""
         return {
             "server": {
-                "host": "10.0.51.143",
+                "host": "localhost",
                 "port": 8000,
                 "debug": False
             },
             "onlyoffice": {
-                "server_url": "http://10.0.51.143:8080",
-                "secret": "wIUxuAv0mXxom895nEGPKG3Bw3hm",
-                "api_js_url": "http://10.0.51.143:8080/web-apps/apps/api/documents/api.js",
+                "server_url": "http://localhost:8080",
+                "secret": "abcdedghijklmnopqrstuvwxyz",
+                "api_js_url": "http://localhost:8080/web-apps/apps/api/documents/api.js",
                 "jwt_enabled": True,
                 "allow_private_ip": True,
                 "allow_meta_ip": True,
@@ -152,7 +152,7 @@ class Config:
             },
             "ui": {
                 "language": "zh-CN",
-                "title": "OnlyOffice Document Editor",
+                "title": "Document Editor",
                 "subtitle": "在线文档编辑和协作平台",
                 "theme": "default"
             },
@@ -175,7 +175,7 @@ class Config:
     @property
     def server_host(self) -> str:
         """服务器主机地址"""
-        return self.get('server.host', '10.0.51.143')
+        return self.get('server.host', 'localhost')
     
     @property
     def server_port(self) -> int:
@@ -190,12 +190,12 @@ class Config:
     @property
     def onlyoffice_server_url(self) -> str:
         """OnlyOffice服务器URL"""
-        return self.get('onlyoffice.server_url', 'http://10.0.51.143:8080')
+        return self.get('onlyoffice.server_url', 'http://localhost:8080')
     
     @property
     def onlyoffice_secret(self) -> str:
         """OnlyOffice JWT密钥"""
-        return self.get('onlyoffice.secret', 'wIUxuAv0mXxom895nEGPKG3Bw3hm')
+        return self.get('onlyoffice.secret', 'abcdefghijklmnopqrstuvwxyz')
     
     @property
     def onlyoffice_api_js_url(self) -> str:
