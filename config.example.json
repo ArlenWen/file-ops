@@ -1,0 +1,66 @@
+{
+  "_comment": "OnlyOffice Document Server 集成项目配置文件示例",
+  "_description": "复制此文件为 config.json 并根据您的环境修改配置",
+  
+  "server": {
+    "host": "10.0.51.143",
+    "port": 8000,
+    "debug": false,
+    "_comment": "服务器配置 - host为服务器IP地址，port为服务端口"
+  },
+  
+  "onlyoffice": {
+    "server_url": "http://10.0.51.143:8080",
+    "secret": "wIUxuAv0mXxom895nEGPpHOPKG3Bw3hm",
+    "api_js_url": "http://10.0.51.143:8080/web-apps/apps/api/documents/api.js",
+    "jwt_enabled": true,
+    "allow_private_ip": true,
+    "allow_meta_ip": true,
+    "use_unauthorized_storage": true,
+    "_comment": "OnlyOffice Document Server配置"
+  },
+  
+  "storage": {
+    "upload_directory": "uploads",
+    "max_file_size": 104857600,
+    "allowed_extensions": [".docx", ".xlsx", ".pptx", ".doc", ".xls", ".ppt", ".txt", ".pdf"],
+    "_comment": "文件存储配置 - max_file_size单位为字节(100MB)"
+  },
+  
+  "security": {
+    "cors_origins": ["*"],
+    "cors_credentials": true,
+    "cors_methods": ["*"],
+    "cors_headers": ["*"],
+    "_comment": "安全配置 - CORS设置"
+  },
+  
+  "ui": {
+    "language": "zh-CN",
+    "title": "OnlyOffice Document Editor",
+    "subtitle": "在线文档编辑和协作平台",
+    "_comment": "用户界面配置"
+  },
+  
+  "editor": {
+    "default_user_id": "user1",
+    "default_user_name": "User",
+    "auto_save": true,
+    "collaborative": true,
+    "comments": true,
+    "download": true,
+    "print": true,
+    "_comment": "编辑器功能配置"
+  },
+  
+  "_environment_variables": {
+    "_comment": "可以使用以下环境变量覆盖配置:",
+    "_examples": [
+      "SERVER_HOST=192.168.1.100",
+      "SERVER_PORT=9000", 
+      "ONLYOFFICE_SERVER_URL=http://192.168.1.100:8080",
+      "ONLYOFFICE_SECRET=your-custom-secret",
+      "STORAGE_UPLOAD_DIRECTORY=/custom/upload/path"
+    ]
+  }
+}

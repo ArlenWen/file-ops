@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档编辑器 - OnlyOffice</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+            min-width: 320px;
+            min-height: 400px;
+        }
+        
+        .editor-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            position: relative;
+            min-height: 60px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .editor-title {
+            font-weight: 600;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .editor-title span:last-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .file-icon {
+            font-size: 1.2em;
+        }
+        
+        .editor-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+        }
+        
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+        
+        .btn-primary {
+            background: rgba(40, 167, 69, 0.8);
+        }
+        
+        .btn-primary:hover {
+            background: rgba(40, 167, 69, 1);
+        }
+        
+        .btn-secondary {
+            background: rgba(108, 117, 125, 0.8);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(108, 117, 125, 1);
+        }
+        
+        .editor-container {
+            height: calc(100vh - 60px);
+            background: white;
+            position: relative;
+            min-height: 300px;
+        }
+        
+        #placeholder {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* 确保OnlyOffice iframe能够正确自适应 */
+        #placeholder iframe {
+            width: 100% !important;
+            height: 100% !important;
+            border: none;
+            display: block;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: #667eea;
+            font-weight: 500;
+        }
+        
+        .error-container {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .error-icon {
+            font-size: 4em;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        
+        .error-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .error-message {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .offline .status-dot {
+            background: #dc3545;
+            animation: none;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .editor-header {
+                padding: 10px 15px;
+            }
+
+            .btn {
+                padding: 6px 12px;
+                font-size: 0.85em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .editor-header {
+                padding: 8px 12px;
+                flex-direction: column;
+                gap: 8px;
+                min-height: 80px;
+            }
+
+            .editor-title {
+                font-size: 0.95em;
+                width: 100%;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .editor-actions {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                padding: 6px 10px;
+                font-size: 0.8em;
+                min-width: 70px;
+            }
+
+            .editor-container {
+                height: calc(100vh - 80px);
+            }
+
+            .status-indicator {
+                font-size: 0.8em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .editor-header {
+                padding: 6px 10px;
+                min-height: 90px;
+            }
+
+            .editor-title {
+                font-size: 0.9em;
+            }
+
+            .btn {
+                padding: 5px 8px;
+                font-size: 0.75em;
+                min-width: 60px;
+            }
+
+            .editor-container {
+                height: calc(100vh - 90px);
+            }
+
+            .loading-text {
+                font-size: 0.9em;
+            }
+
+            .error-title {
+                font-size: 1.2em;
+            }
+
+            .error-message {
+                font-size: 0.9em;
+            }
+        }
+
+        /* 超小屏幕适配 */
+        @media (max-width: 360px) {
+            .editor-header {
+                min-height: 100px;
+            }
+
+            .editor-title {
+                font-size: 0.85em;
+            }
+
+            .btn {
+                padding: 4px 6px;
+                font-size: 0.7em;
+                min-width: 50px;
+            }
+
+            .editor-container {
+                height: calc(100vh - 100px);
+            }
+        }
+
+        /* 高度自适应 */
+        @media (max-height: 600px) {
+            .editor-header {
+                padding: 6px 15px;
+                min-height: 50px;
+            }
+
+            .editor-title {
+                font-size: 0.9em;
+            }
+
+            .btn {
+                padding: 4px 8px;
+                font-size: 0.8em;
+            }
+
+            .editor-container {
+                height: calc(100vh - 50px);
+            }
+        }
+
+        /* 确保编辑器在所有尺寸下都可用 */
+        @media (max-width: 320px), (max-height: 400px) {
+            .editor-header {
+                flex-direction: column;
+                padding: 5px;
+                min-height: 80px;
+            }
+
+            .editor-title {
+                font-size: 0.8em;
+            }
+
+            .btn {
+                padding: 3px 6px;
+                font-size: 0.7em;
+                margin: 1px;
+            }
+
+            .editor-container {
+                height: calc(100vh - 80px);
+                min-height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-header">
+        <div class="editor-title">
+            <span class="file-icon" id="fileIcon">📄</span>
+            <span id="fileName">加载中...</span>
+        </div>
+        <div class="editor-actions">
+            <div class="status-indicator" id="statusIndicator">
+                <div class="status-dot"></div>
+                <span>已连接</span>
+            </div>
+            <button class="btn btn-primary" onclick="saveDocument()" id="saveBtn">
+                💾 保存
+            </button>
+            <button class="btn btn-secondary" onclick="downloadFile()">
+                📥 下载
+            </button>
+            <button class="btn" onclick="closeEditor()">
+                ✕ 关闭
+            </button>
+        </div>
+    </div>
+    
+    <div class="editor-container">
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">正在加载编辑器...</div>
+        </div>
+        
+        <div class="error-container" id="errorContainer">
+            <div class="error-icon">⚠️</div>
+            <div class="error-title">加载失败</div>
+            <div class="error-message" id="errorMessage">无法加载文档编辑器，请检查网络连接或稍后重试。</div>
+            <button class="btn btn-primary" onclick="retryLoad()">🔄 重试</button>
+            <button class="btn btn-secondary" onclick="closeEditor()">返回</button>
+        </div>
+        
+        <div id="placeholder"></div>
+    </div>
+    
+    <script>
+        let currentEditor = null;
+        let fileId = null;
+        let fileName = null;
+        let isDocumentLoaded = false;
+        let appConfig = null;
+
+        // 加载应用配置
+        async function loadAppConfig() {
+            try {
+                const response = await fetch('/config');
+                if (response.ok) {
+                    appConfig = await response.json();
+                    // 动态加载OnlyOffice API
+                    const script = document.createElement('script');
+                    script.type = 'text/javascript';
+                    script.src = appConfig.onlyoffice.api_js_url;
+                    script.onload = function() {
+                        console.log('OnlyOffice API 加载成功');
+                        initializeEditor();
+                    };
+                    script.onerror = function() {
+                        showError('API加载失败', '无法加载OnlyOffice API，请检查服务器配置。');
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    showError('配置加载失败', '无法加载应用配置。');
+                }
+            } catch (error) {
+                console.error('加载配置失败:', error);
+                showError('配置加载失败', '无法加载应用配置。');
+            }
+        }
+        
+        // 从URL参数获取文件信息
+        function getUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            fileId = urlParams.get('fileId');
+            fileName = urlParams.get('fileName');
+            
+            if (!fileId) {
+                showError('缺少文件参数', '无法确定要编辑的文件。');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // 获取文件图标
+        function getFileIcon(fileName) {
+            const extension = fileName.split('.').pop().toLowerCase();
+            const iconMap = {
+                'docx': '📄', 'doc': '📄',
+                'xlsx': '📊', 'xls': '📊',
+                'pptx': '📽️', 'ppt': '📽️',
+                'pdf': '📕',
+                'txt': '📝'
+            };
+            return iconMap[extension] || '📄';
+        }
+        
+        // 显示错误信息
+        function showError(title, message) {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('errorContainer').style.display = 'flex';
+            document.querySelector('.error-title').textContent = title;
+            document.getElementById('errorMessage').textContent = message;
+        }
+        
+        // 隐藏加载界面
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+        
+        // 更新状态指示器
+        function updateStatus(connected) {
+            const indicator = document.getElementById('statusIndicator');
+            const dot = indicator.querySelector('.status-dot');
+            const text = indicator.querySelector('span');
+            
+            if (connected) {
+                indicator.classList.remove('offline');
+                text.textContent = '已连接';
+            } else {
+                indicator.classList.add('offline');
+                text.textContent = '连接断开';
+            }
+        }
+        
+        // 加载文档编辑器
+        async function loadEditor() {
+            try {
+                const response = await fetch(`/editor-config/${fileId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const config = await response.json();
+                
+                // 更新页面标题和文件信息
+                document.title = `${fileName} - 文档编辑器`;
+                document.getElementById('fileName').textContent = fileName;
+                document.getElementById('fileIcon').textContent = getFileIcon(fileName);
+                
+                // 配置编辑器事件和自适应设置
+                config.events = {
+                    onDocumentReady: function() {
+                        console.log('Document is ready');
+                        hideLoading();
+                        isDocumentLoaded = true;
+                        updateStatus(true);
+
+                        // 文档加载完成后调整大小
+                        setTimeout(handleResize, 500);
+                    },
+                    onError: function(event) {
+                        console.error('Editor error:', event);
+                        showError('编辑器错误', '文档加载过程中发生错误，请重试。');
+                        updateStatus(false);
+                    },
+                    onWarning: function(event) {
+                        console.warn('Editor warning:', event);
+                    }
+                };
+
+                // 设置编辑器为自适应大小
+                config.width = "100%";
+                config.height = "100%";
+                
+                // 初始化编辑器
+                currentEditor = new DocsAPI.DocEditor("placeholder", config);
+                
+                // 设置超时检查
+                setTimeout(() => {
+                    if (!isDocumentLoaded) {
+                        showError('加载超时', '文档加载时间过长，请检查网络连接或稍后重试。');
+                    }
+                }, 30000); // 30秒超时
+                
+            } catch (error) {
+                console.error('Failed to load editor:', error);
+                showError('加载失败', `无法加载文档编辑器: ${error.message}`);
+            }
+        }
+        
+        // 保存文档
+        function saveDocument() {
+            if (currentEditor && isDocumentLoaded) {
+                // OnlyOffice会自动保存，这里可以添加手动保存逻辑
+                const saveBtn = document.getElementById('saveBtn');
+                const originalText = saveBtn.innerHTML;
+                saveBtn.innerHTML = '💾 保存中...';
+                saveBtn.disabled = true;
+                
+                setTimeout(() => {
+                    saveBtn.innerHTML = '✅ 已保存';
+                    setTimeout(() => {
+                        saveBtn.innerHTML = originalText;
+                        saveBtn.disabled = false;
+                    }, 2000);
+                }, 1000);
+            }
+        }
+        
+        // 下载文件
+        function downloadFile() {
+            if (fileId) {
+                window.open(`/download/${fileId}`, '_blank');
+            }
+        }
+        
+        // 关闭编辑器
+        function closeEditor() {
+            if (currentEditor) {
+                currentEditor.destroyEditor();
+            }
+            
+            // 返回主页面
+            if (window.opener) {
+                window.close();
+            } else {
+                window.location.href = '/';
+            }
+        }
+        
+        // 重试加载
+        function retryLoad() {
+            document.getElementById('errorContainer').style.display = 'none';
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            isDocumentLoaded = false;
+            
+            if (currentEditor) {
+                currentEditor.destroyEditor();
+                currentEditor = null;
+            }
+            
+            setTimeout(loadEditor, 1000);
+        }
+        
+        // 处理窗口大小变化
+        function handleResize() {
+            if (currentEditor && isDocumentLoaded) {
+                // 延迟调整编辑器大小，避免频繁调用
+                clearTimeout(window.resizeTimer);
+                window.resizeTimer = setTimeout(() => {
+                    try {
+                        // 重新计算编辑器容器高度
+                        const header = document.querySelector('.editor-header');
+                        const container = document.querySelector('.editor-container');
+                        const headerHeight = header.offsetHeight;
+                        container.style.height = `calc(100vh - ${headerHeight}px)`;
+
+                        // 通知OnlyOffice编辑器调整大小
+                        if (currentEditor.resizeEditor) {
+                            currentEditor.resizeEditor();
+                        }
+                    } catch (error) {
+                        console.warn('Resize error:', error);
+                    }
+                }, 250);
+            }
+        }
+
+        // 检查屏幕方向变化（移动设备）
+        function handleOrientationChange() {
+            setTimeout(handleResize, 500); // 延迟处理，等待方向变化完成
+        }
+
+        // 初始化编辑器（在API加载完成后调用）
+        function initializeEditor() {
+            if (getUrlParams()) {
+                loadEditor();
+            }
+            // 初始化时调整一次大小
+            setTimeout(handleResize, 1000);
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            loadAppConfig();
+        };
+
+        // 页面卸载时清理
+        window.onbeforeunload = function() {
+            if (currentEditor) {
+                currentEditor.destroyEditor();
+            }
+        };
+
+        // 监听各种事件
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleOrientationChange);
+        window.addEventListener('online', () => updateStatus(true));
+        window.addEventListener('offline', () => updateStatus(false));
+    </script>
+</body>
+</html>

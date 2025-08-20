@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnlyOffice Document Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .upload-section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+        
+        .upload-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-right: 15px;
+        }
+        
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-label {
+            display: inline-block;
+            padding: 12px 25px;
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #667eea;
+            font-weight: 500;
+        }
+        
+        .file-input-label:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .file-list {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+        
+        .file-list h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s ease;
+        }
+        
+        .file-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        
+        .file-info {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .file-meta {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .file-actions .btn {
+            padding: 8px 15px;
+            font-size: 0.9em;
+        }
+
+        .selected-file-info {
+            margin-top: 20px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .selected-file-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .selected-file-header h4 {
+            margin: 0;
+            color: #667eea;
+            font-size: 1em;
+        }
+
+        .clear-selection {
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .clear-selection:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .selected-file-details {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .file-icon {
+            font-size: 2em;
+            color: #667eea;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-details .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .file-details .file-meta {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+
+        
+        #placeholder {
+            width: 100%;
+            height: 600px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 3em;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>OnlyOffice Document Editor</h1>
+        <p>在线文档编辑和协作平台</p>
+    </div>
+    
+    <div class="container">
+        <div id="alertContainer"></div>
+        
+        <div class="upload-section">
+            <h3>📁 上传文档</h3>
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" class="file-input" accept=".docx,.xlsx,.pptx,.doc,.xls,.ppt,.txt,.pdf" onchange="displaySelectedFileInfo()">
+                <label for="fileInput" class="file-input-label">
+                    选择文件
+                </label>
+            </div>
+            <button class="btn" onclick="uploadFile()">上传</button>
+
+            <!-- 选中文件信息显示区域 -->
+            <div id="selectedFileInfo" class="selected-file-info" style="display: none;">
+                <div class="selected-file-header">
+                    <h4>📄 已选择文件</h4>
+                    <button class="clear-selection" onclick="clearFileSelection()">✕</button>
+                </div>
+                <div class="selected-file-details">
+                    <div class="file-icon">📄</div>
+                    <div class="file-details">
+                        <div class="file-name" id="selectedFileName"></div>
+                        <div class="file-meta">
+                            <span id="selectedFileSize"></span> •
+                            <span id="selectedFileType"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="file-list">
+            <h3>📄 我的文档</h3>
+            <div id="fileList">
+                <div class="loading">正在加载文档列表...</div>
+            </div>
+        </div>
+        
+
+    </div>
+    
+    <script>
+        // 全局配置变量
+        let appConfig = null;
+
+        // 加载应用配置
+        async function loadAppConfig() {
+            try {
+                const response = await fetch('/config');
+                if (response.ok) {
+                    appConfig = await response.json();
+                    // 更新页面标题
+                    document.title = appConfig.ui.title;
+                    document.querySelector('.header h1').textContent = appConfig.ui.title;
+                    document.querySelector('.header p').textContent = appConfig.ui.subtitle;
+                } else {
+                    console.warn('无法加载应用配置，使用默认设置');
+                }
+            } catch (error) {
+                console.error('加载配置失败:', error);
+            }
+        }
+        
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alertContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN');
+        }
+
+        function getFileIcon(fileName) {
+            const extension = fileName.split('.').pop().toLowerCase();
+            const iconMap = {
+                'docx': '📄', 'doc': '📄',
+                'xlsx': '📊', 'xls': '📊',
+                'pptx': '📽️', 'ppt': '📽️',
+                'pdf': '📕',
+                'txt': '📝'
+            };
+            return iconMap[extension] || '📄';
+        }
+
+        function getFileType(fileName) {
+            const extension = fileName.split('.').pop().toLowerCase();
+            const typeMap = {
+                'docx': 'Word 文档', 'doc': 'Word 文档',
+                'xlsx': 'Excel 表格', 'xls': 'Excel 表格',
+                'pptx': 'PowerPoint 演示文稿', 'ppt': 'PowerPoint 演示文稿',
+                'pdf': 'PDF 文档',
+                'txt': '文本文档'
+            };
+            return typeMap[extension] || '未知类型';
+        }
+
+        function displaySelectedFileInfo() {
+            const fileInput = document.getElementById('fileInput');
+            const selectedFileInfo = document.getElementById('selectedFileInfo');
+            const selectedFileName = document.getElementById('selectedFileName');
+            const selectedFileSize = document.getElementById('selectedFileSize');
+            const selectedFileType = document.getElementById('selectedFileType');
+            const fileIcon = document.querySelector('.selected-file-details .file-icon');
+
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+
+                // 显示文件信息
+                selectedFileName.textContent = file.name;
+                selectedFileSize.textContent = formatFileSize(file.size);
+                selectedFileType.textContent = getFileType(file.name);
+                fileIcon.textContent = getFileIcon(file.name);
+
+                // 显示文件信息区域
+                selectedFileInfo.style.display = 'block';
+
+                // 更新文件输入标签文本
+                const label = document.querySelector('.file-input-label');
+                label.textContent = '重新选择文件';
+                label.style.background = '#e8f5e8';
+                label.style.borderColor = '#28a745';
+                label.style.color = '#28a745';
+            } else {
+                clearFileSelection();
+            }
+        }
+
+        function clearFileSelection() {
+            const fileInput = document.getElementById('fileInput');
+            const selectedFileInfo = document.getElementById('selectedFileInfo');
+            const label = document.querySelector('.file-input-label');
+
+            // 清空文件选择
+            fileInput.value = '';
+
+            // 隐藏文件信息区域
+            selectedFileInfo.style.display = 'none';
+
+            // 恢复文件输入标签
+            label.textContent = '选择文件';
+            label.style.background = '#f8f9fa';
+            label.style.borderColor = '#667eea';
+            label.style.color = '#667eea';
+        }
+        
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (!file) {
+                showAlert('请选择一个文件', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showAlert('文件上传成功！');
+                    loadFileList();
+                    clearFileSelection(); // 清除文件选择信息
+                } else {
+                    const error = await response.json();
+                    showAlert('上传失败: ' + (error.detail || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showAlert('上传错误: ' + error.message, 'error');
+            }
+        }
+        
+        async function loadFileList() {
+            try {
+                const response = await fetch('/files');
+                const files = await response.json();
+                
+                const fileList = document.getElementById('fileList');
+                
+                if (files.length === 0) {
+                    fileList.innerHTML = `
+                        <div class="empty-state">
+                            <div style="font-size: 3em; margin-bottom: 15px; color: #ddd;">📄</div>
+                            <p>还没有上传任何文档</p>
+                            <p style="font-size: 0.9em; color: #999;">上传您的第一个文档开始使用</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                fileList.innerHTML = '';
+                
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.innerHTML = `
+                        <div class="file-info">
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-meta">
+                                大小: ${formatFileSize(file.size)} | 
+                                上传时间: ${formatDate(file.upload_time)}
+                            </div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn" onclick="openDocument('${file.id}', '${file.name}')">编辑</button>
+                            <button class="btn btn-secondary" onclick="downloadFile('${file.id}', '${file.name}')">下载</button>
+                            <button class="btn btn-danger" onclick="deleteFile('${file.id}', '${file.name}')">删除</button>
+                        </div>
+                    `;
+                    fileList.appendChild(fileItem);
+                });
+            } catch (error) {
+                console.error('Error loading file list:', error);
+                showAlert('加载文件列表失败', 'error');
+            }
+        }
+        
+        function openDocument(fileId, fileName) {
+            // 构建编辑器页面URL
+            const editorUrl = `/editor?fileId=${encodeURIComponent(fileId)}&fileName=${encodeURIComponent(fileName)}`;
+
+            // 计算窗口大小（占屏幕的90%，但有最小值限制）
+            const screenWidth = window.screen.availWidth;
+            const screenHeight = window.screen.availHeight;
+            const windowWidth = Math.max(Math.min(screenWidth * 0.9, 1400), 800);
+            const windowHeight = Math.max(Math.min(screenHeight * 0.9, 900), 600);
+
+            // 计算窗口位置（居中）
+            const left = Math.max((screenWidth - windowWidth) / 2, 0);
+            const top = Math.max((screenHeight - windowHeight) / 2, 0);
+
+            // 在新窗口中打开编辑器
+            const editorWindow = window.open(
+                editorUrl,
+                'documentEditor',
+                `width=${windowWidth},height=${windowHeight},left=${left},top=${top},scrollbars=yes,resizable=yes,status=no,toolbar=no,menubar=no,location=no`
+            );
+
+            // 检查弹窗是否被阻止
+            if (!editorWindow) {
+                showAlert('无法打开编辑器窗口，请允许弹窗并重试', 'error');
+                return;
+            }
+
+            // 聚焦到新窗口
+            editorWindow.focus();
+
+            // 显示成功提示
+            showAlert(`正在新窗口中打开 "${fileName}"`, 'success');
+        }
+        
+
+        
+        async function downloadFile(fileId, fileName) {
+            try {
+                const response = await fetch(`/download/${fileId}`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    showAlert('下载失败', 'error');
+                }
+            } catch (error) {
+                showAlert('下载错误: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteFile(fileId, fileName) {
+            // 显示确认对话框
+            if (!confirm(`确定要删除文件 "${fileName}" 吗？此操作不可撤销。`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/delete/${fileId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showAlert('文件删除成功！');
+                    loadFileList(); // 重新加载文件列表
+                } else {
+                    const error = await response.json();
+                    showAlert('删除失败: ' + (error.detail || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showAlert('删除错误: ' + error.message, 'error');
+            }
+        }
+        
+        // 页面加载时加载配置和文件列表
+        window.onload = async function() {
+            await loadAppConfig();
+            loadFileList();
+        };
+        
+        // 文件拖拽上传
+        const uploadSection = document.querySelector('.upload-section');
+        
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.style.backgroundColor = '#f0f0f0';
+        });
+        
+        uploadSection.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadSection.style.backgroundColor = 'white';
+        });
+        
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.style.backgroundColor = 'white';
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                displaySelectedFileInfo(); // 显示拖拽文件的信息
+            }
+        });
+    </script>
+</body>
+</html>

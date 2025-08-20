@@ -1,0 +1,82 @@
+# 配置文件 - 包含敏感信息，不应提交到版本控制
+config.json
+config.json.backup
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 日志文件
+*.log
+logs/
+
+# 上传的文件（可选，根据需要调整）
+uploads/*.docx
+uploads/*.xlsx
+uploads/*.pptx
+uploads/*.doc
+uploads/*.xls
+uploads/*.ppt
+uploads/*.pdf
+uploads/*.txt
+# 保留 uploads 目录但忽略具体文件
+uploads/*
+!uploads/.gitkeep
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+
+# 测试覆盖率
+.coverage
+htmlcov/
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# uv 锁文件（可选，根据团队需要决定）
+# uv.lock
